@@ -1,6 +1,6 @@
-package by.sivko.resume.builder.operations.sql;
+package by.sivko.resume.builder.operators.selects.sql;
 
-import by.sivko.resume.builder.operations.SelectOperator;
+import by.sivko.resume.builder.operators.selects.SelectOperator;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -16,6 +16,7 @@ public class SqlSelectOperator extends SelectOperator {
     @Override
     public String getStringExpression() {
         String tableName = null;
+
         if (aClass.isAnnotationPresent(Table.class)) {
             final Table tableAnnotation = (Table) aClass.getAnnotation(Table.class);
             tableName = tableAnnotation.name();
@@ -25,9 +26,10 @@ public class SqlSelectOperator extends SelectOperator {
             tableName = aClass.getSimpleName().toLowerCase();
         }
 
-        if(tableName == null) {
-            throw new IllegalArgumentException(String.format("Class [%s] isn't a entity", aClass.getName()));
+        if (tableName == null) {
+            throw new IllegalArgumentException(String.format("Class [%s] isn't a entity", aClass.getSimpleName()));
         }
-        return String.format(SQL_SELECT_STRING, aClass.getSimpleName());
+
+        return String.format(SQL_SELECT_STRING, tableName);
     }
 }

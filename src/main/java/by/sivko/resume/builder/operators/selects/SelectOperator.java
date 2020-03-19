@@ -1,4 +1,6 @@
-package by.sivko.resume.builder.operations;
+package by.sivko.resume.builder.operators.selects;
+
+import by.sivko.resume.builder.operators.Operator;
 
 public abstract class SelectOperator implements Operator {
     protected Class aClass;

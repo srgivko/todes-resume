@@ -25,15 +25,15 @@ CREATE TABLE IF NOT EXISTS contact
         constraint pkey_contact primary key,
     text      varchar(255) not null,
     resume_id bigint       not null
-        constraint fk_contact_resume references resume on delete cascade
+        constraint fk_contact_resume references resume
 );
 
 CREATE TABLE IF NOT EXISTS resume_technology
 (
     resume_id     bigint not null
-        constraint fk_resume_technology_resume references resume on delete cascade,
+        constraint fk_resume_technology_resume references resume,
     technology_id bigint not null
-        constraint fk_resume_technology_technology references technology on delete cascade
+        constraint fk_resume_technology_technology references technology
 );
 
 INSERT INTO technology(id, name)

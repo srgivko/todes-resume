@@ -1,106 +1,76 @@
 package by.sivko.resume.builder;
 
-import by.sivko.resume.builder.operations.Operator;
+import by.sivko.resume.builder.factories.sql.SqlOperatorFactory;
+import by.sivko.resume.builder.operators.Operator;
+import by.sivko.resume.builder.operators.conditions.ConditionOperator;
 
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import java.util.ArrayList;
-import java.util.List;
-
-public class SqlQuery implements Query {
-
-    private StringBuilder query = new StringBuilder();
-    private List<QueryParameter> queryParameters = new ArrayList<>();
-    private List<Operator> buildSteps = new ArrayList<>();
-
-    public String getQuery() {
-        return query.toString();
-    }
-
-    @Override
-    public List<QueryParameter> getQueryParameters() {
-        return queryParameters;
-    }
+public class SqlQuery extends Query {
 
     public static QueryBuilder builder() {
         return new SqlQuery().new SqlBuilder();
     }
 
-    private void addParameter(QueryParameter queryParameter) {
-        this.queryParameters.add(queryParameter);
-    }
+    class SqlBuilder extends QueryBuilder {
 
-    private void appendQuery(String text) {
-        this.query.append(text);
-    }
-
-    @Override
-    public String toString() {
-        return this.query.toString();
-    }
-
-    class SqlBuilder implements QueryBuilder {
-
-        private final String WHERE = " WHERE ";
-        private final String SELECT_FROM = "SELECT * FROM %s" + WHERE;
-        private final String EQUAL = "%s = '%s'";
-        private final String AND = " AND ";
-        private final String OR = " OR ";
-        private final String LIKE = "%s LIKE '%s'";
+        public SqlBuilder() {
+            super.operatorFactory = new SqlOperatorFactory();
+        }
 
         @Override
         public QueryBuilder select(Class aClass) {
-            String tableName = null;
-            if (aClass.isAnnotationPresent(Table.class)) {
-                final Table tableAnnotation = (Table) aClass.getAnnotation(Table.class);
-                tableName = tableAnnotation.name();
-            }
-            if (tableName == null && aClass.isAnnotationPresent(Entity.class)) {
-                tableName = aClass.getSimpleName().toLowerCase();
-            }
-            if(tableName == null) {
-                throw new IllegalArgumentException(String.format("Class [%s] isn't a entity", aClass));
-            }
-            appendQuery(String.format(SELECT_FROM, tableName));
+            super.addBuildingStep(super.operatorFactory.createSelectOperator(aClass));
             return this;
         }
 
         @Override
         public QueryBuilder equal(String columnName, String value) {
-            addParameter(new QueryParameter(QueryOperation.EQUAL, columnName, value));
-            appendQuery(String.format(EQUAL, columnName, value));
+            final ConditionOperator conditionOperator = super.operatorFactory.createEqualOperator(columnName, value);
+            super.addBuildingStep(conditionOperator);
+            SqlQuery.super.addConditionOperator(conditionOperator);
             return this;
         }
 
         @Override
         public QueryBuilder like(String columnName, String value) {
-            addParameter(new QueryParameter(QueryOperation.LIKE, columnName, value));
-            appendQuery(String.format(LIKE, columnName, value));
+            final ConditionOperator conditionOperator = super.operatorFactory.createLikeOperator(columnName, value);
+            super.addBuildingStep(conditionOperator);
+            SqlQuery.super.addConditionOperator(conditionOperator);
             return this;
         }
 
         @Override
         public QueryBuilder and() {
-            appendQuery(AND);
+            super.addBuildingStep(super.operatorFactory.createAndOperator());
             return this;
         }
 
         @Override
         public QueryBuilder or() {
-            appendQuery(OR);
+            super.addBuildingStep(super.operatorFactory.createOrOperator());
             return this;
         }
 
         @Override
         public Query build() {
-            removeWhere();
+            super.isValidBuildingSteps();
+
+            final Operator selectOperator = super.buildingSteps.get(0);
+            SqlQuery.super.appendQuery(selectOperator.getStringExpression());
+
+            if (super.buildingSteps.size() > 1) {
+                addWhereClause();
+            }
+
+            for (int indexOfBuildingStep = 1; indexOfBuildingStep < super.buildingSteps.size(); indexOfBuildingStep++) {
+                SqlQuery.super.appendQuery(super.buildingSteps.get(indexOfBuildingStep).getStringExpression());
+            }
+
             return SqlQuery.this;
         }
 
-        private void removeWhere() {
-            if (queryParameters.isEmpty()) {
-                query = new StringBuilder(query.substring(0, query.length() - WHERE.length()));
-            }
+        private void addWhereClause() {
+            String WHERE = " WHERE ";
+            SqlQuery.super.appendQuery(WHERE);
         }
 
     }
