@@ -15,17 +15,47 @@ public abstract class QueryBuilder {
 
     protected AbstractOperatorFactory operatorFactory;
 
-    public abstract QueryBuilder select(Class aClass);
+    public QueryBuilder select(Class aClass) {
+        this.addBuildingStep(this.operatorFactory.createSelectOperator(aClass));
+        return this;
+    }
 
-    public abstract QueryBuilder equal(String columnName, String value);
+    public QueryBuilder equal(String columnName, String value) {
+        final ConditionOperator conditionOperator = this.operatorFactory.createEqualOperator(columnName, value);
+        this.addBuildingStep(conditionOperator);
+        this.addConditionOperatorToQuery(conditionOperator);
+        return this;
+    }
 
-    public abstract QueryBuilder like(String columnName, String value);
+    public QueryBuilder like(String columnName, String value) {
+        final ConditionOperator conditionOperator = this.operatorFactory.createLikeOperator(columnName, value);
+        this.addBuildingStep(conditionOperator);
+        this.addConditionOperatorToQuery(conditionOperator);
+        return this;
+    }
 
-    public abstract QueryBuilder and();
+    public QueryBuilder and() {
+        this.addBuildingStep(this.operatorFactory.createAndOperator());
+        return this;
+    }
 
-    public abstract QueryBuilder or();
+    public QueryBuilder or() {
+        this.addBuildingStep(this.operatorFactory.createOrOperator());
+        return this;
+    }
 
-    public abstract Query build();
+    public Query build() {
+        this.isValidBuildingSteps();
+
+        final Operator selectOperator = this.buildingSteps.get(0);
+        this.appendQuery(selectOperator.getStringExpression());
+
+        for (int indexOfBuildingStep = 0; indexOfBuildingStep < this.buildingSteps.size(); indexOfBuildingStep++) {
+            this.appendQuery(this.buildingSteps.get(indexOfBuildingStep).getStringExpression());
+        }
+
+        return this.getQuery();
+    }
 
     protected void addBuildingStep(Operator operator) {
         this.buildingSteps.add(operator);
@@ -54,4 +84,11 @@ public abstract class QueryBuilder {
         }
         return index % 2 != 0 || operator instanceof BinaryOperator;
     }
+
+    protected abstract void addConditionOperatorToQuery(ConditionOperator operator);
+
+    protected abstract void appendQuery(String expression);
+
+    protected abstract Query getQuery();
+
 }

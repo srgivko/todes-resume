@@ -17,40 +17,6 @@ public class SqlQuery extends Query {
         }
 
         @Override
-        public QueryBuilder select(Class aClass) {
-            super.addBuildingStep(super.operatorFactory.createSelectOperator(aClass));
-            return this;
-        }
-
-        @Override
-        public QueryBuilder equal(String columnName, String value) {
-            final ConditionOperator conditionOperator = super.operatorFactory.createEqualOperator(columnName, value);
-            super.addBuildingStep(conditionOperator);
-            SqlQuery.super.addConditionOperator(conditionOperator);
-            return this;
-        }
-
-        @Override
-        public QueryBuilder like(String columnName, String value) {
-            final ConditionOperator conditionOperator = super.operatorFactory.createLikeOperator(columnName, value);
-            super.addBuildingStep(conditionOperator);
-            SqlQuery.super.addConditionOperator(conditionOperator);
-            return this;
-        }
-
-        @Override
-        public QueryBuilder and() {
-            super.addBuildingStep(super.operatorFactory.createAndOperator());
-            return this;
-        }
-
-        @Override
-        public QueryBuilder or() {
-            super.addBuildingStep(super.operatorFactory.createOrOperator());
-            return this;
-        }
-
-        @Override
         public Query build() {
             super.isValidBuildingSteps();
 
@@ -62,9 +28,24 @@ public class SqlQuery extends Query {
             }
 
             for (int indexOfBuildingStep = 1; indexOfBuildingStep < super.buildingSteps.size(); indexOfBuildingStep++) {
-                SqlQuery.super.appendQuery(super.buildingSteps.get(indexOfBuildingStep).getStringExpression());
+                this.appendQuery(super.buildingSteps.get(indexOfBuildingStep).getStringExpression());
             }
 
+            return getQuery();
+        }
+
+        @Override
+        protected void addConditionOperatorToQuery(ConditionOperator operator) {
+            SqlQuery.super.addConditionOperator(operator);
+        }
+
+        @Override
+        protected void appendQuery(String expression) {
+            SqlQuery.super.appendQuery(expression);
+        }
+
+        @Override
+        protected Query getQuery() {
             return SqlQuery.this;
         }
 
